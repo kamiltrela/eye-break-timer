@@ -7,8 +7,9 @@ var timerMinutes = 20; //Variable to keep track of minutes remaining
 var timerSeconds = 0; //Variable to keep track of seconds remaining
 var intervalID = 0; //Variable to store setInterval ID for work timer
 var breakIntervalID = 0; //Variable to store setInterval ID for break timer
-var breakTimer = 20; //Variable to keep track of seconds remaining for break
+var timerBreak = 20; //Variable to keep track of seconds remaining for break
 var runningTimer = "work"; //Variable to keep track of which timer is running
+var muted = false; //Toggle-able variable to keep track if sound effect is muted
 
 /**
  * This function is invoked when the "Start" button is pressed. It will call
@@ -17,6 +18,10 @@ var runningTimer = "work"; //Variable to keep track of which timer is running
  * page load.
  */
 function startButton(){
+    //clearInterval for work and break timer in case they are running
+    clearInterval(intervalID);
+    clearInterval(breakIntervalID);
+
     if (runningTimer == "work") {
         workTimer();
     } 
@@ -33,8 +38,6 @@ function startButton(){
  * timer variables reach zero.
  */
 function workTimer(){
-
-
     //Bold "Start" button text
     boldSelectedButton("start");
 
@@ -67,16 +70,32 @@ function workTimer(){
 
         timerSeconds--;
 
+        /**
+         * When timer reaches 0 minutes and 0 seconds, clear this interval and
+         * play the beep sound 3x. Then start the breakTimer function
+         */
         if (timerMinutes == 0 && timerSeconds == 0) {
             clearInterval(intervalID);
-            breakTimer();
+            
+            setTimeout(() => {
+                playSoundEffect();
+            }, 100);
+
+            setTimeout(() => {
+                playSoundEffect();
+            }, 1800); 
+
+            setTimeout(() => {
+                playSoundEffect();
+            }, 1000);
+
+            setTimeout(() => {
+                breakTimer();
+            }, 3000);
         }
-    }, 100);
-
-
-
-
+    }, 1000); 
 }
+
 
 /**
  * This function performs clearInterval on the work timer if it is running,
@@ -108,7 +127,7 @@ function resetTimer(){
     timerSeconds = 0;
 
     //Reset break timer variable
-    breakTimer = 20;
+    timerBreak = 20;
 
     //Set HTML back to 20 minute work timer
     document.getElementById("timer").innerHTML = "Work Timer: 20:00";
@@ -125,23 +144,31 @@ function breakTimer(){
     runningTimer = "break";
      
     breakIntervalID = setInterval(() => {
-        if (breakTimer < 10) {
-            document.getElementById("timer").innerHTML = "Time for a break! \n\n" + "0:0" + breakTimer;
+        if (timerBreak < 10) {
+            document.getElementById("timer").innerHTML = "Time for a break! \n\n" + "0:0" + timerBreak;
         } else {
-            document.getElementById("timer").innerHTML = "Time for a break! \n\n" + "0:" + breakTimer;
+            document.getElementById("timer").innerHTML = "Time for a break! \n\n" + "0:" + timerBreak;
         }
 
-        if (breakTimer < 0) {
+        if (timerBreak < 0) {
             var reworkTimer = 5;
             
-            document.getElementById("timer").innerHTML = "Break is over! Please start the timer again";
+            document.getElementById("timer").innerHTML = "Break is over! Please reset the timer";
+
+            setTimeout(() => {
+                playSoundEffect();
+            }, 200);
+
             clearInterval(breakIntervalID);            
         }
 
-        breakTimer--;
+        timerBreak--;
     }, 1000);
 }
 
+/**
+ * This function displays a pop-up when the credits button is clicked.
+ */
 function showCredits(){
     var myModal = new bootstrap.Modal(document.getElementById("myModal"));
     myModal.show();
@@ -159,3 +186,42 @@ function boldSelectedButton(option){
     document.getElementById(option).style.fontWeight = "bolder";
 }
 
+/**
+ * This function uses Howler.js to play sound the beeping sound effect.
+ */
+function playSoundEffect(){
+    //Create a new sound variable with source as our beep mp3 file
+    var sound = new Howl({
+        src: ['sounds/beep-beep.mp3']
+        });
+        
+    var id1; //Variable to store sound ID
+    
+
+    if (muted) {
+        //intentionally left blank
+        //If muted is true, sound is not played
+    } else {
+        id1 = sound.play(); //Play sound and store sound ID
+    } 
+    
+    sound.rate(0.7, id1); //Reduce the pitch of the sound played
+
+    //Pausing after 1000ms keeps the sound effects from overlapping with each other
+    setTimeout(function() {
+        sound.pause();
+      }, 1000);
+}
+
+/**
+ * This function allows the mute button to be toggled
+ */
+function muteSound(){
+    if (muted) {
+        muted = false;
+        document.getElementById("mute").innerHTML = "Mute Sound";
+    } else {
+        muted = true;
+        document.getElementById("mute").innerHTML = "Unmute Sound";
+    }
+}
